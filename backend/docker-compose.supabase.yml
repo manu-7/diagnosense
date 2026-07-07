@@ -1,0 +1,27 @@
+# Use this alongside docker-compose.yml when your Postgres is Supabase (not local docker):
+#   docker compose -f docker-compose.yml -f docker-compose.supabase.yml up --build api redis celery_worker celery_beat
+#
+# What this does:
+# - Drops the "db" service entirely — you don't run a local Postgres container
+# - Removes the DATABASE_URL override on api/celery_worker/celery_beat, so they
+#   fall through to whatever DATABASE_URL is set in your .env (the Supabase URL)
+# - Removes "depends_on: db" so compose doesn't try to start a service that no longer exists
+
+services:
+  api:
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - redis
+
+  celery_worker:
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - redis
+
+  celery_beat:
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - redis

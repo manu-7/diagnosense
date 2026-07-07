@@ -1,0 +1,74 @@
+services:
+  api:
+    build: .
+    container_name: diagnostic_api
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      # These override .env when running via Docker Compose, so the same .env
+      # file works unmodified for local dev (localhost) and Docker (service
+      # names) - only the network location changes, never your secrets.
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/diagnostic_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: diagnostic_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: diagnostic_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: diagnostic_redis
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build: .
+    container_name: diagnostic_celery_worker
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/diagnostic_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+
+  celery_beat:
+    build: .
+    container_name: diagnostic_celery_beat
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/diagnostic_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:
