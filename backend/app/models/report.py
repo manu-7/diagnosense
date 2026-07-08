@@ -17,9 +17,9 @@ class Report(Base):
     booking_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("bookings.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    file_key: Mapped[str] = mapped_column(String(500), nullable=False)  # S3 object key, not a public URL
+    file_key: Mapped[str] = mapped_column(String(500), nullable=False) 
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
-    # structured extracted values, e.g. {"hemoglobin": 10.2, "wbc": 11200}
+    
     extracted_values: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # AI-flagged anomalies, e.g. [{"parameter": "hemoglobin", "value": 10.2, "normal_range": "13-17", "severity": "low"}]
     anomalies: Mapped[list | None] = mapped_column(JSON, nullable=True)
