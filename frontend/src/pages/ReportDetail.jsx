@@ -30,15 +30,20 @@ export default function ReportDetail() {
     setError("");
     try {
       const { data } = await api.get(`/reports/${report.id}/download`);
+      const fileResponse = await fetch(data.signed_url);
+      if (!fileResponse.ok) throw new Error("File fetch failed");
+      const blob = await fileResponse.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
       const link = document.createElement("a");
-      link.href = data.signed_url;
-      link.rel = "noopener noreferrer";
-      link.target = "_self";
+      link.href = blobUrl;
+      link.download = `report-${report.id}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      setError(apiErrorMessage(err, "Couldn't generate a download link."));
+      setError(apiErrorMessage(err, "Couldn't download the report."));
     } finally {
       setDownloading(false);
     }
