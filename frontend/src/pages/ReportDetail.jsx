@@ -30,7 +30,13 @@ export default function ReportDetail() {
     setError("");
     try {
       const { data } = await api.get(`/reports/${report.id}/download`);
-      window.open(data.signed_url, "_blank", "noopener,noreferrer");
+      const link = document.createElement("a");
+      link.href = data.signed_url;
+      link.rel = "noopener noreferrer";
+      link.target = "_self";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
       setError(apiErrorMessage(err, "Couldn't generate a download link."));
     } finally {
